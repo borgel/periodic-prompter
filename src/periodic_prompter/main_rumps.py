@@ -29,9 +29,15 @@ class PeriodicPrompterApp(rumps.App):
         self.scheduler = PromptScheduler(self.settings, self.notification_system)
         self.settings_window = None
         
-        # Set up menu
+        # Set up initial menu with current plan
+        current_plan = self.notification_system.current_plan
+        if current_plan:
+            display_text = current_plan[:50] + "..." if len(current_plan) > 50 else current_plan
+        else:
+            display_text = "No plan set"
+        
         self.menu = [
-            "Current Plan",
+            display_text,
             "Prompt Now",
             None,  # Separator
             "Schedule Info", 
@@ -40,15 +46,30 @@ class PeriodicPrompterApp(rumps.App):
             "Settings",
         ]
         
+        # Set callback for the plan menu item
+        self.menu[0].set_callback(self.show_current_plan)
+        
         # Start scheduler
         self.scheduler.start()
+    
+    def update_plan_in_menu(self):
+        """Update the menu with current plan text."""
+        current_plan = self.notification_system.current_plan
+        if current_plan:
+            # Truncate long plans for menu display
+            display_text = current_plan[:50] + "..." if len(current_plan) > 50 else current_plan
+        else:
+            display_text = "No plan set"
         
-    @rumps.clicked("Current Plan")
+        # Update the first menu item (index 0)
+        self.menu[0].title = display_text
+        
+        # Update the callback for the plan menu item
+        self.menu[0].set_callback(self.show_current_plan)
+    
     def show_current_plan(self, _):
-        """Show the current plan."""
-        print("Current Plan clicked!")  # Debug
+        """Show the current plan in a notification."""
         current = self.notification_system.current_plan or "No plan set yet"
-        print(f"Current plan: {current}")  # Debug
         self.notification_system.show_notification("Current Plan", current)
         
     @rumps.clicked("Prompt Now")
@@ -62,12 +83,14 @@ class PeriodicPrompterApp(rumps.App):
                 previous = self.notification_system.current_plan
                 print(f"Previous plan: {previous}")  # Debug
                 
-                # First test just the notification
-                self.notification_system.show_notification("Test", "Prompt Now was clicked!")
-                
-                # Then try the full prompt
+                # Show the full prompt
                 result = self.notification_system.prompt_user_plan(previous)
                 print(f"Prompt result: {result}")  # Debug
+                
+                # Update menu with new plan
+                if result.get('plan'):
+                    self.update_plan_in_menu()
+                    
             except Exception as e:
                 print(f"Error in prompt: {e}")  # Debug
                 import traceback

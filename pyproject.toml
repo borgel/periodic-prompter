@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "periodic-prompter"
+version = "0.1.0"
+description = "A macOS tool to periodically ask you what you're working on"
+authors = ["User"]
+readme = "README.md"
+packages = [{include = "periodic_prompter", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.0"
+
+[tool.poetry.scripts]
+periodic-prompter = "periodic_prompter.main:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -5,12 +5,22 @@ from tkinter import messagebox, simpledialog
 from plyer import notification
 import threading
 import time
+from .storage import PlanStorage, LogWriter
 
 
 class NotificationSystem:
-    def __init__(self):
-        self.last_plan = ""
-        self.current_plan = ""
+    def __init__(self, settings=None):
+        self.settings = settings
+        self.storage = PlanStorage()
+        self.log_writer = None
+        
+        # Load current plan from storage
+        self.current_plan = self.storage.get_current_plan()
+        
+        # Initialize log writer if logging is enabled
+        if settings and settings.get('create_log', True):
+            log_path = settings.get('log_file_path', '~/periodic_prompter_log.txt')
+            self.log_writer = LogWriter(log_path)
         
     def show_notification(self, title, message, timeout=10):
         """Show a macOS notification."""
@@ -130,8 +140,21 @@ class NotificationSystem:
         result = self.show_input_dialog(title, prompt, previous_plan)
         
         if result['plan']:
-            self.last_plan = self.current_plan
+            # Save to storage
+            plan_entry = self.storage.save_plan(
+                plan=result['plan'],
+                completion_status=result.get('completion', ''),
+                previous_plan=previous_plan
+            )
+            
+            # Update current plan
             self.current_plan = result['plan']
+            
+            # Write to log if logging is enabled
+            if self.log_writer:
+                self.log_writer.write_plan_log(plan_entry)
+                if self.settings and self.settings.get('create_csv_log', False):
+                    self.log_writer.write_csv_log(plan_entry)
             
             # Show confirmation
             self.show_notification("Plan Recorded", f"Your plan: {result['plan'][:50]}...")

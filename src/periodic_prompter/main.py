@@ -6,13 +6,14 @@ from PIL import Image, ImageDraw
 import pystray
 from pystray import MenuItem as item
 from .notifications import NotificationSystem
+from .settings import Settings
 
 
 class PeriodicPrompter:
     def __init__(self):
-        self.current_plan = "No plan set yet"
+        self.settings = Settings()
+        self.notification_system = NotificationSystem(self.settings)
         self.tray_icon = None
-        self.notification_system = NotificationSystem()
         
     def create_image(self):
         """Create a simple icon for the menu bar."""
@@ -42,8 +43,6 @@ class PeriodicPrompter:
         def run_prompt():
             previous = self.notification_system.current_plan
             result = self.notification_system.prompt_user_plan(previous)
-            if result['plan']:
-                self.current_plan = result['plan']
         
         # Run in separate thread to avoid blocking UI
         threading.Thread(target=run_prompt, daemon=True).start()

@@ -29,44 +29,39 @@ class PeriodicPrompterApp(rumps.App):
         self.scheduler = PromptScheduler(self.settings, self.notification_system)
         self.settings_window = None
         
-        # Set up initial menu with current plan
+        # Set up menu
+        self.update_menu()
+        
+        # Start scheduler
+        self.scheduler.start()
+    
+    def update_menu(self):
+        """Update the menu with current plan text."""
         current_plan = self.notification_system.current_plan
         if current_plan:
+            # Truncate long plans for menu display and update title
             display_text = current_plan[:50] + "..." if len(current_plan) > 50 else current_plan
+            # Update the app title to show current plan
+            self.title = f"⏰ {display_text}"
         else:
-            display_text = "No plan set"
+            self.title = "⏰"
         
+        # Create static menu
         self.menu = [
-            display_text,
-            "Prompt Now",
+            "Current Plan",
+            "Prompt Now", 
             None,  # Separator
             "Schedule Info", 
             "Toggle Scheduler",
             None,  # Separator
             "Settings",
         ]
-        
-        # Set callback for the plan menu item
-        self.menu[0].set_callback(self.show_current_plan)
-        
-        # Start scheduler
-        self.scheduler.start()
     
     def update_plan_in_menu(self):
         """Update the menu with current plan text."""
-        current_plan = self.notification_system.current_plan
-        if current_plan:
-            # Truncate long plans for menu display
-            display_text = current_plan[:50] + "..." if len(current_plan) > 50 else current_plan
-        else:
-            display_text = "No plan set"
-        
-        # Update the first menu item (index 0)
-        self.menu[0].title = display_text
-        
-        # Update the callback for the plan menu item
-        self.menu[0].set_callback(self.show_current_plan)
+        self.update_menu()
     
+    @rumps.clicked("Current Plan") 
     def show_current_plan(self, _):
         """Show the current plan in a notification."""
         current = self.notification_system.current_plan or "No plan set yet"

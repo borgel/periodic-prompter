@@ -8,6 +8,7 @@ from pystray import MenuItem as item
 from .notifications import NotificationSystem
 from .settings import Settings
 from .scheduler import PromptScheduler
+from .settings_gui import SettingsWindow
 
 
 class PeriodicPrompter:
@@ -15,6 +16,7 @@ class PeriodicPrompter:
         self.settings = Settings()
         self.notification_system = NotificationSystem(self.settings)
         self.scheduler = PromptScheduler(self.settings, self.notification_system)
+        self.settings_window = None
         self.tray_icon = None
         
     def create_image(self):
@@ -51,8 +53,16 @@ class PeriodicPrompter:
         
     def open_settings(self, icon, item):
         """Open settings interface."""
-        print("Opening settings...")
-        # TODO: Implement settings GUI
+        def show_settings():
+            self.settings_window = SettingsWindow(
+                self.settings, 
+                self.scheduler, 
+                self.notification_system
+            )
+            self.settings_window.show()
+        
+        # Run in separate thread to avoid blocking UI
+        threading.Thread(target=show_settings, daemon=True).start()
         
     def show_schedule_info(self, icon, item):
         """Show information about the current schedule."""

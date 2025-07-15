@@ -1,11 +1,14 @@
-"""Setup script for py2app packaging."""
+"""Simple setup script for py2app packaging without argv emulation."""
 
 from setuptools import setup
 
 APP = ['src/periodic_prompter/main.py']
 DATA_FILES = []
 OPTIONS = {
-    'argv_emulation': False,  # Disable to avoid Carbon framework issues
+    'argv_emulation': False,
+    'site_packages': False,
+    'strip': True,
+    'optimize': 2,
     'packages': ['PIL', 'pystray', 'plyer', 'schedule', 'tkinter'],
     'includes': [
         'periodic_prompter.notifications',
@@ -16,23 +19,22 @@ OPTIONS = {
     ],
     'excludes': [
         'matplotlib', 'numpy', 'scipy', 'Carbon', 'wx', 'pygame',
-        'tkinter.test', 'test', 'unittest', 'lib2to3'
+        'tkinter.test', 'test', 'unittest', 'lib2to3', 'distutils',
+        'email', 'http', 'urllib', 'xml', 'pydoc', 'doctest'
     ],
-    'frameworks': [],  # Don't include deprecated frameworks
-    'no_chdir': True,  # Don't change working directory
-    'emulate_shell_environment': False,  # Disable shell emulation
+    'frameworks': [],
     'plist': {
         'CFBundleName': 'Periodic Prompter',
         'CFBundleDisplayName': 'Periodic Prompter',
         'CFBundleIdentifier': 'com.user.periodic-prompter',
         'CFBundleVersion': '0.1.0',
         'CFBundleShortVersionString': '0.1.0',
-        'LSUIElement': True,  # Run as background app (no dock icon)
+        'LSUIElement': True,
         'NSHighResolutionCapable': True,
-        'LSMinimumSystemVersion': '10.15.0',  # Require Catalina or later
-        'NSSupportsAutomaticGraphicsSwitching': True
+        'LSMinimumSystemVersion': '10.15.0',
+        'NSSupportsAutomaticGraphicsSwitching': True,
+        'LSApplicationCategoryType': 'public.app-category.productivity'
     },
-    'iconfile': None,  # We'll create a proper icon later
 }
 
 setup(

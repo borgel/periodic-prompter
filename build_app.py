@@ -18,11 +18,11 @@ def main():
             print(f"Cleaning {dir_name}...")
             shutil.rmtree(dir_name)
     
-    # Run py2app
-    print("Running py2app...")
+    # Run py2app with simple setup first
+    print("Running py2app with simple setup...")
     try:
         result = subprocess.run([
-            sys.executable, 'setup.py', 'py2app'
+            sys.executable, 'setup_simple.py', 'py2app'
         ], check=True, capture_output=True, text=True)
         
         print("Build successful!")

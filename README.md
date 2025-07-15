@@ -14,9 +14,21 @@ The user can configure:
 * Where to place the log file and what to call if, if they want to use one
 
 # TODO
-* Add a command (and an explanation to this file) about how to build a macOS .app of this tool
+1. Set up Python project structure with Poetry (pyproject.toml, src/ directory)
+2. Install and configure dependencies using Poetry (pystray for menu bar, plyer for notifications, schedule for timing)
+3. Create main application entry point and menu bar icon
+4. Implement notification system with user input dialogs
+5. Create settings configuration system with validation
+6. Add persistent storage for user plans and logs
+7. Implement scheduling logic with configurable start/end times
+8. Create settings GUI interface
+9. Add logging functionality with configurable file output
+10. Package application as macOS .app bundle using py2app
+11. Add build instructions and commands to this README
 
 # Constraints
 * Use Python
 * We only care about macOS, don't worry about compatability with other platforms
-*
+* Prefer to use fewer libraries if possible, but don't let that restrict features
+* Make modular git commits as you work
+* make sure not to mark a TODO list item as complete unless you are sure it has been finished

@@ -16,7 +16,8 @@ OPTIONS = {
     ],
     'excludes': [
         'matplotlib', 'numpy', 'scipy', 'Carbon', 'wx', 'pygame',
-        'tkinter.test', 'test', 'unittest', 'lib2to3'
+        'tkinter.test', 'test', 'unittest', 'lib2to3',
+        'pydoc', 'doctest', 'django', 'flask', 'tornado'
     ],
     'frameworks': [],  # Don't include deprecated frameworks
     'no_chdir': True,  # Don't change working directory

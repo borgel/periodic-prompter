@@ -19,8 +19,8 @@ OPTIONS = {
     ],
     'excludes': [
         'matplotlib', 'numpy', 'scipy', 'Carbon', 'wx', 'pygame',
-        'tkinter.test', 'test', 'unittest', 'lib2to3', 'distutils',
-        'email', 'http', 'urllib', 'xml', 'pydoc', 'doctest'
+        'tkinter.test', 'test', 'unittest', 'lib2to3',
+        'pydoc', 'doctest', 'django', 'flask', 'tornado'
     ],
     'frameworks': [],
     'plist': {

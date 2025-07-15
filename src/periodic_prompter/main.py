@@ -5,12 +5,14 @@ import threading
 from PIL import Image, ImageDraw
 import pystray
 from pystray import MenuItem as item
+from .notifications import NotificationSystem
 
 
 class PeriodicPrompter:
     def __init__(self):
         self.current_plan = "No plan set yet"
         self.tray_icon = None
+        self.notification_system = NotificationSystem()
         
     def create_image(self):
         """Create a simple icon for the menu bar."""
@@ -32,8 +34,19 @@ class PeriodicPrompter:
     
     def show_current_plan(self, icon, item):
         """Show the current plan in a simple way."""
-        print(f"Current plan: {self.current_plan}")
-        # TODO: Replace with proper dialog
+        current = self.notification_system.current_plan or "No plan set yet"
+        self.notification_system.show_notification("Current Plan", current)
+        
+    def prompt_now(self, icon, item):
+        """Manually trigger a planning prompt."""
+        def run_prompt():
+            previous = self.notification_system.current_plan
+            result = self.notification_system.prompt_user_plan(previous)
+            if result['plan']:
+                self.current_plan = result['plan']
+        
+        # Run in separate thread to avoid blocking UI
+        threading.Thread(target=run_prompt, daemon=True).start()
         
     def open_settings(self, icon, item):
         """Open settings interface."""
@@ -51,6 +64,7 @@ class PeriodicPrompter:
         
         menu = pystray.Menu(
             item('Current Plan', self.show_current_plan),
+            item('Prompt Now', self.prompt_now),
             item('Settings', self.open_settings),
             item('Quit', self.quit_application)
         )

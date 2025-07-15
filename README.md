@@ -13,18 +13,78 @@ The user can configure:
 * If they want to create a log
 * Where to place the log file and what to call if, if they want to use one
 
-# TODO
-1. Set up Python project structure with Poetry (pyproject.toml, src/ directory)
-2. Install and configure dependencies using Poetry (pystray for menu bar, plyer for notifications, schedule for timing)
-3. Create main application entry point and menu bar icon
-4. Implement notification system with user input dialogs
-5. Create settings configuration system with validation
-6. Add persistent storage for user plans and logs
-7. Implement scheduling logic with configurable start/end times
-8. Create settings GUI interface
-9. Add logging functionality with configurable file output
-10. Package application as macOS .app bundle using py2app
-11. Add build instructions and commands to this README
+# Installation & Usage
+
+## Requirements
+- macOS (tested on macOS 15.0+)
+- Python 3.8+ 
+- Poetry for dependency management
+
+## Development Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd periodic-prompter
+   ```
+
+2. **Install dependencies with Poetry**
+   ```bash
+   poetry install
+   ```
+
+3. **Run the application in development mode**
+   ```bash
+   poetry run python -m periodic_prompter.main
+   ```
+
+## Building the macOS App
+
+1. **Build the .app bundle**
+   ```bash
+   poetry run python build_app.py
+   ```
+
+2. **The built app will be in the `dist/` directory**
+   - Location: `dist/Periodic Prompter.app`
+   - A symbolic link `Periodic Prompter.app` will be created in the project root
+
+3. **Install the app**
+   ```bash
+   # Option 1: Open from current location
+   open "dist/Periodic Prompter.app"
+   
+   # Option 2: Copy to Applications folder
+   cp -R "dist/Periodic Prompter.app" /Applications/
+   ```
+
+## Usage
+
+1. **Launch the app** - it will appear in your menu bar as a clock icon
+2. **Click the menu bar icon** to access:
+   - Current Plan: View your current plan
+   - Prompt Now: Manually trigger a planning session
+   - Schedule Info: View scheduling status and next prompt time
+   - Toggle Scheduler: Start/stop automatic prompts
+   - Settings: Configure intervals, working hours, and logging
+   - Quit: Exit the application
+
+3. **Configure settings** via the Settings menu:
+   - Set prompt intervals (minimum 6 minutes)
+   - Configure working hours and weekday-only mode
+   - Enable/disable logging and choose log file location
+   - Export your plans to text or CSV format
+
+## Features Completed
+- ✅ Menu bar application with no dock icon
+- ✅ Configurable prompt intervals (0.1+ hours)
+- ✅ Working hours and weekday scheduling
+- ✅ Persistent storage of plans and completion status
+- ✅ Automatic and manual prompting
+- ✅ Comprehensive settings GUI
+- ✅ Text and CSV logging/export
+- ✅ macOS .app bundle packaging
+- ✅ Background operation and notification support
 
 # Constraints
 * Use Python

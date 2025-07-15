@@ -49,90 +49,51 @@ class NotificationSystem:
                 print(f"Failed to show notification: {e}, {e2}")
             
     def show_input_dialog(self, title, prompt, previous_plan=""):
-        """Show input dialog for user to enter their plan."""
-        # Create a simple tkinter dialog
-        root = tk.Tk()
-        root.withdraw()  # Hide the main window
-        root.lift()  # Bring to front
-        root.attributes('-topmost', True)  # Keep on top
+        """Show input dialog using native macOS dialog."""
+        import subprocess
         
         try:
-            # Create custom dialog
-            dialog = tk.Toplevel(root)
-            dialog.title(title)
-            dialog.geometry("400x300")
-            dialog.lift()
-            dialog.attributes('-topmost', True)
-            
-            # Add previous plan if exists
+            # Build the AppleScript for the dialog
             if previous_plan:
-                tk.Label(dialog, text=f"Previous plan: {previous_plan}", 
-                        wraplength=350, justify='left').pack(pady=10)
-                tk.Label(dialog, text="Did you complete it?", 
-                        font=('Arial', 10, 'bold')).pack()
+                completion_prompt = f'set completion to button returned of (display dialog "Previous plan: {previous_plan}\\n\\nDid you complete it?" buttons {{"Yes", "No", "Partially"}} default button "Yes")'
+                plan_prompt = f'set planText to text returned of (display dialog "{prompt}" default answer "" with title "{title}")'
+                script = f'''
+                {completion_prompt}
+                {plan_prompt}
+                return completion & "|" & planText
+                '''
+            else:
+                script = f'''
+                set planText to text returned of (display dialog "{prompt}" default answer "" with title "{title}")
+                return "yes|" & planText
+                '''
+            
+            # Execute the AppleScript
+            result = subprocess.run(['osascript', '-e', script], 
+                                  capture_output=True, text=True, check=True)
+            
+            if result.stdout.strip():
+                parts = result.stdout.strip().split('|', 1)
+                completion = parts[0].lower() if len(parts) > 1 else 'yes'
+                plan = parts[1] if len(parts) > 1 else parts[0]
+                return {'plan': plan, 'completion': completion}
+            else:
+                return {'plan': '', 'completion': 'yes'}
                 
-                completion_frame = tk.Frame(dialog)
-                completion_frame.pack(pady=5)
-                
-                completion_var = tk.StringVar(value="yes")
-                tk.Radiobutton(completion_frame, text="Yes", 
-                              variable=completion_var, value="yes").pack(side='left')
-                tk.Radiobutton(completion_frame, text="No", 
-                              variable=completion_var, value="no").pack(side='left')
-                tk.Radiobutton(completion_frame, text="Partially", 
-                              variable=completion_var, value="partially").pack(side='left')
-            
-            # Add input for new plan
-            tk.Label(dialog, text=prompt, font=('Arial', 10, 'bold')).pack(pady=(10, 5))
-            
-            text_widget = tk.Text(dialog, height=5, width=45, wrap='word')
-            text_widget.pack(pady=10, padx=10, fill='both', expand=True)
-            text_widget.focus()
-            
-            result = {'plan': '', 'completion': 'yes'}
-            
-            def on_submit():
-                result['plan'] = text_widget.get(1.0, tk.END).strip()
-                if previous_plan:
-                    result['completion'] = completion_var.get()
-                dialog.destroy()
-                root.quit()
-            
-            def on_cancel():
-                result['plan'] = ''
-                dialog.destroy()
-                root.quit()
-            
-            # Buttons
-            button_frame = tk.Frame(dialog)
-            button_frame.pack(pady=10)
-            
-            tk.Button(button_frame, text="Submit", command=on_submit, 
-                     bg='#007AFF', fg='white', padx=20).pack(side='left', padx=5)
-            tk.Button(button_frame, text="Cancel", command=on_cancel, 
-                     padx=20).pack(side='left', padx=5)
-            
-            # Handle window close
-            dialog.protocol("WM_DELETE_WINDOW", on_cancel)
-            
-            # Center the dialog
-            dialog.update_idletasks()
-            x = (dialog.winfo_screenwidth() // 2) - (dialog.winfo_width() // 2)
-            y = (dialog.winfo_screenheight() // 2) - (dialog.winfo_height() // 2)
-            dialog.geometry(f"+{x}+{y}")
-            
-            root.mainloop()
-            
-            return result
-            
-        except Exception as e:
-            print(f"Error showing input dialog: {e}")
+        except subprocess.CalledProcessError:
+            # User cancelled or error occurred
             return {'plan': '', 'completion': 'yes'}
-        finally:
+        except Exception as e:
+            print(f"Error showing native dialog: {e}")
+            # Fallback to simple text input
             try:
-                root.destroy()
+                script = f'text returned of (display dialog "{prompt}" default answer "")'
+                result = subprocess.run(['osascript', '-e', script], 
+                                      capture_output=True, text=True, check=True)
+                plan = result.stdout.strip()
+                return {'plan': plan, 'completion': 'yes'}
             except:
-                pass
+                return {'plan': '', 'completion': 'yes'}
     
     def prompt_user_plan(self, previous_plan=""):
         """Show notification and prompt user for their plan."""

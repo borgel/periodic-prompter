@@ -46,15 +46,32 @@ class PeriodicPrompterApp(rumps.App):
     @rumps.clicked("Current Plan")
     def show_current_plan(self, _):
         """Show the current plan."""
+        print("Current Plan clicked!")  # Debug
         current = self.notification_system.current_plan or "No plan set yet"
+        print(f"Current plan: {current}")  # Debug
         self.notification_system.show_notification("Current Plan", current)
         
     @rumps.clicked("Prompt Now")
     def prompt_now(self, _):
         """Manually trigger a planning prompt."""
+        print("Prompt Now clicked!")  # Debug
+        
         def run_prompt():
-            previous = self.notification_system.current_plan
-            result = self.notification_system.prompt_user_plan(previous)
+            try:
+                print("Starting prompt...")  # Debug
+                previous = self.notification_system.current_plan
+                print(f"Previous plan: {previous}")  # Debug
+                
+                # First test just the notification
+                self.notification_system.show_notification("Test", "Prompt Now was clicked!")
+                
+                # Then try the full prompt
+                result = self.notification_system.prompt_user_plan(previous)
+                print(f"Prompt result: {result}")  # Debug
+            except Exception as e:
+                print(f"Error in prompt: {e}")  # Debug
+                import traceback
+                traceback.print_exc()
         
         # Run in separate thread to avoid blocking UI
         threading.Thread(target=run_prompt, daemon=True).start()

@@ -371,6 +371,23 @@ files = [
 six = ">=1.10.0"
 
 [[package]]
+name = "rumps"
+version = "0.4.0"
+description = "Ridiculously Uncomplicated MacOS Python Statusbar apps."
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "rumps-0.4.0.tar.gz", hash = "sha256:17fb33c21b54b1e25db0d71d1d793dc19dc3c0b7d8c79dc6d833d0cffc8b1596"},
+]
+
+[package.dependencies]
+pyobjc-framework-Cocoa = "*"
+
+[package.extras]
+dev = ["pytest (>=4.3)", "pytest-mock (>=2.0.0)", "tox (>=3.8)"]
+
+[[package]]
 name = "schedule"
 version = "1.2.2"
 description = "Job scheduling for humans."
@@ -477,4 +494,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.8"
-content-hash = "6ed0425e9423afa6e1b8a054cb9da38645f16d815dd21cd6a7461864c5a146e4"
+content-hash = "9d2dfe99e15aa2691160da9e96ad57dcf31ecd91dd54135c287c7f815c482e53"

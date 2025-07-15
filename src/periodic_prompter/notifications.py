@@ -30,14 +30,23 @@ class NotificationSystem:
     def show_notification(self, title, message, timeout=10):
         """Show a macOS notification."""
         try:
-            notification.notify(
-                title=title,
-                message=message,
-                app_name='Periodic Prompter',
-                timeout=timeout
-            )
+            # Try using native macOS notifications first
+            import subprocess
+            script = f'''
+            display notification "{message}" with title "{title}" subtitle "Periodic Prompter"
+            '''
+            subprocess.run(['osascript', '-e', script], check=True)
         except Exception as e:
-            print(f"Failed to show notification: {e}")
+            try:
+                # Fallback to plyer if available
+                notification.notify(
+                    title=title,
+                    message=message,
+                    app_name='Periodic Prompter',
+                    timeout=timeout
+                )
+            except Exception as e2:
+                print(f"Failed to show notification: {e}, {e2}")
             
     def show_input_dialog(self, title, prompt, previous_plan=""):
         """Show input dialog for user to enter their plan."""

@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(poetry init:*)",
+      "Bash(mkdir:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(poetry add:*)",
+      "Bash(poetry run:*)",
+      "Bash(poetry:*)",
+      "Bash(chmod:*)",
+      "Bash(ls:*)",
+      "Bash(poetry show:*)",
+      "Bash(poetry remove:*)",
+      "Bash(timeout:*)",
+      "Bash(rm:*)",
+      "Bash(python:*)",
+      "Bash(open:*)",
+      "Bash(log show:*)"
+    ],
+    "deny": []
+  }
+}

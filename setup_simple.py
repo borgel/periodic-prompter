@@ -1,16 +1,32 @@
 """Simple setup script for py2app packaging without argv emulation."""
 
-from setuptools import setup
+from setuptools import setup, find_packages
+import sys
+import os
 
-APP = ['src/periodic_prompter/main.py']
+# Add src directory to path so we can find the package
+sys.path.insert(0, 'src')
+
+APP = ['app_main.py']
 DATA_FILES = []
+
+# Copy the entire package to the resources
+package_data = []
+for root, dirs, files in os.walk('src/periodic_prompter'):
+    for file in files:
+        if file.endswith('.py'):
+            rel_path = os.path.relpath(os.path.join(root, file), 'src')
+            package_data.append(rel_path)
+
 OPTIONS = {
     'argv_emulation': False,
     'site_packages': False,
     'strip': True,
     'optimize': 2,
-    'packages': ['PIL', 'pystray', 'plyer', 'schedule', 'tkinter'],
+    'packages': ['PIL', 'rumps', 'plyer', 'schedule', 'tkinter'],
     'includes': [
+        'periodic_prompter',
+        'periodic_prompter.main_rumps',
         'periodic_prompter.notifications',
         'periodic_prompter.settings', 
         'periodic_prompter.storage',
@@ -23,6 +39,7 @@ OPTIONS = {
         'pydoc', 'doctest', 'django', 'flask', 'tornado'
     ],
     'frameworks': [],
+    'resources': ['src/periodic_prompter'],
     'plist': {
         'CFBundleName': 'Periodic Prompter',
         'CFBundleDisplayName': 'Periodic Prompter',

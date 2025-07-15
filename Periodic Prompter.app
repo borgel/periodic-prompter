@@ -1,0 +1,1 @@
+/Users/borgel/working/periodic-prompter/dist/Periodic Prompter.app

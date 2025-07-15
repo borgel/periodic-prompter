@@ -10,10 +10,19 @@ os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
 from PIL import Image, ImageDraw
 import pystray
 from pystray import MenuItem as item
-from .notifications import NotificationSystem
-from .settings import Settings
-from .scheduler import PromptScheduler
-from .settings_gui import SettingsWindow
+
+# Use absolute imports for packaging compatibility
+try:
+    from periodic_prompter.notifications import NotificationSystem
+    from periodic_prompter.settings import Settings
+    from periodic_prompter.scheduler import PromptScheduler
+    from periodic_prompter.settings_gui import SettingsWindow
+except ImportError:
+    # Fallback to relative imports for development
+    from .notifications import NotificationSystem
+    from .settings import Settings
+    from .scheduler import PromptScheduler
+    from .settings_gui import SettingsWindow
 
 
 class PeriodicPrompter:

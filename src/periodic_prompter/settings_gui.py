@@ -317,7 +317,11 @@ Plans today: {stats['plans_today']}"""
             # Update notification system log writer
             if self.notification_system:
                 if updates['create_log']:
-                    from .storage import LogWriter
+                    # Use absolute imports for packaging compatibility
+                    try:
+                        from periodic_prompter.storage import LogWriter
+                    except ImportError:
+                        from .storage import LogWriter
                     self.notification_system.log_writer = LogWriter(updates['log_file_path'])
                 else:
                     self.notification_system.log_writer = None

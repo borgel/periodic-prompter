@@ -5,7 +5,12 @@ from tkinter import messagebox, simpledialog
 from plyer import notification
 import threading
 import time
-from .storage import PlanStorage, LogWriter
+
+# Use absolute imports for packaging compatibility
+try:
+    from periodic_prompter.storage import PlanStorage, LogWriter
+except ImportError:
+    from .storage import PlanStorage, LogWriter
 
 
 class NotificationSystem:

@@ -2,6 +2,11 @@
 
 import sys
 import threading
+import os
+
+# Fix for Carbon framework issues on modern macOS
+os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
+
 from PIL import Image, ImageDraw
 import pystray
 from pystray import MenuItem as item

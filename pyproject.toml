@@ -8,9 +8,11 @@ packages = [{include = "periodic_prompter", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-pystray = "^0.19.5"
 plyer = "^2.1.0"
 schedule = "^1.2.2"
+pystray = ">=0.19.5"
+pyobjc-framework-cocoa = ">=10.0"
+pyobjc-core = ">=10.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.0"

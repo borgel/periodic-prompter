@@ -14,7 +14,11 @@ OPTIONS = {
         'periodic_prompter.scheduler',
         'periodic_prompter.settings_gui'
     ],
-    'excludes': ['matplotlib', 'numpy', 'scipy'],
+    'excludes': [
+        'matplotlib', 'numpy', 'scipy', 'Carbon', 'wx', 'pygame',
+        'tkinter.test', 'test', 'unittest', 'lib2to3'
+    ],
+    'frameworks': [],  # Don't include deprecated frameworks
     'plist': {
         'CFBundleName': 'Periodic Prompter',
         'CFBundleDisplayName': 'Periodic Prompter',
@@ -22,7 +26,8 @@ OPTIONS = {
         'CFBundleVersion': '0.1.0',
         'CFBundleShortVersionString': '0.1.0',
         'LSUIElement': True,  # Run as background app (no dock icon)
-        'NSHighResolutionCapable': True
+        'NSHighResolutionCapable': True,
+        'LSMinimumSystemVersion': '10.15.0'  # Require Catalina or later
     },
     'iconfile': None,  # We'll create a proper icon later
 }

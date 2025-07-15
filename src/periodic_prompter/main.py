@@ -7,12 +7,14 @@ import pystray
 from pystray import MenuItem as item
 from .notifications import NotificationSystem
 from .settings import Settings
+from .scheduler import PromptScheduler
 
 
 class PeriodicPrompter:
     def __init__(self):
         self.settings = Settings()
         self.notification_system = NotificationSystem(self.settings)
+        self.scheduler = PromptScheduler(self.settings, self.notification_system)
         self.tray_icon = None
         
     def create_image(self):
@@ -52,9 +54,26 @@ class PeriodicPrompter:
         print("Opening settings...")
         # TODO: Implement settings GUI
         
+    def show_schedule_info(self, icon, item):
+        """Show information about the current schedule."""
+        info = self.scheduler.get_schedule_info()
+        status = "Running" if info['running'] else "Stopped"
+        message = f"Scheduler: {status}\\nInterval: {info['interval_hours']}h\\nNext: {info['next_prompt']}"
+        self.notification_system.show_notification("Schedule Status", message)
+    
+    def toggle_scheduler(self, icon, item):
+        """Toggle the scheduler on/off."""
+        if self.scheduler.running:
+            self.scheduler.stop()
+            self.notification_system.show_notification("Scheduler", "Automatic prompts stopped")
+        else:
+            self.scheduler.start()
+            self.notification_system.show_notification("Scheduler", "Automatic prompts started")
+    
     def quit_application(self, icon, item):
         """Quit the application."""
         print("Quitting Periodic Prompter...")
+        self.scheduler.stop()
         icon.stop()
         
     def setup_tray_icon(self):
@@ -64,6 +83,10 @@ class PeriodicPrompter:
         menu = pystray.Menu(
             item('Current Plan', self.show_current_plan),
             item('Prompt Now', self.prompt_now),
+            pystray.Menu.SEPARATOR,
+            item('Schedule Info', self.show_schedule_info),
+            item('Toggle Scheduler', self.toggle_scheduler),
+            pystray.Menu.SEPARATOR,
             item('Settings', self.open_settings),
             item('Quit', self.quit_application)
         )
@@ -74,6 +97,9 @@ class PeriodicPrompter:
         """Start the application."""
         print("Starting Periodic Prompter...")
         self.setup_tray_icon()
+        
+        # Start the scheduler
+        self.scheduler.start()
         
         # Start the tray icon in the main thread
         self.tray_icon.run()

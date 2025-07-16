@@ -26,7 +26,7 @@ class PeriodicPrompterApp(rumps.App):
         # Initialize components
         self.settings = Settings()
         self.notification_system = NotificationSystem(self.settings)
-        self.scheduler = PromptScheduler(self.settings, self.notification_system)
+        self.scheduler = PromptScheduler(self.settings, self.notification_system, self.update_plan_in_menu)
         self.settings_window = None
         
         # Set up menu

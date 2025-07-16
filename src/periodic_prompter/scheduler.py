@@ -10,9 +10,10 @@ from typing import Callable
 class PromptScheduler:
     """Manages scheduled prompts based on user settings."""
     
-    def __init__(self, settings, notification_system):
+    def __init__(self, settings, notification_system, menu_update_callback=None):
         self.settings = settings
         self.notification_system = notification_system
+        self.menu_update_callback = menu_update_callback
         self.running = False
         self.scheduler_thread = None
         self.stop_event = threading.Event()
@@ -42,6 +43,9 @@ class PromptScheduler:
             
             if result and result.get('plan'):
                 print(f"Plan recorded: {result['plan'][:50]}...")
+                # Update the menu if callback is provided
+                if self.menu_update_callback:
+                    self.menu_update_callback()
             else:
                 print("No plan recorded or user cancelled")
         else:

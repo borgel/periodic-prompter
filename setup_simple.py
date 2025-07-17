@@ -23,7 +23,7 @@ OPTIONS = {
     'site_packages': False,
     'strip': True,
     'optimize': 2,
-    'packages': ['rumps', 'plyer', 'schedule', 'tkinter'],
+    'packages': ['rumps', 'plyer', 'schedule'],
     'includes': [
         'periodic_prompter',
         'periodic_prompter.main_rumps',
@@ -31,11 +31,7 @@ OPTIONS = {
         'periodic_prompter.settings', 
         'periodic_prompter.storage',
         'periodic_prompter.scheduler',
-        'periodic_prompter.settings_gui',
-        'tkinter',
-        'tkinter.ttk',
-        'tkinter.messagebox',
-        'tkinter.filedialog'
+        'periodic_prompter.settings_gui'
     ],
     'excludes': [
         'matplotlib', 'numpy', 'scipy', 'Carbon', 'wx', 'pygame',

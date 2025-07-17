@@ -1,353 +1,321 @@
-"""Settings GUI interface for Periodic Prompter."""
+"""Settings GUI interface for Periodic Prompter using native macOS dialogs."""
 
-import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+import subprocess
+import json
 from pathlib import Path
 
 
 class SettingsWindow:
-    """GUI window for configuring application settings."""
+    """Native macOS dialog-based settings interface."""
     
     def __init__(self, settings, scheduler=None, notification_system=None):
         self.settings = settings
         self.scheduler = scheduler
         self.notification_system = notification_system
-        self.window = None
-        self.vars = {}
         
     def show(self):
-        """Show the settings window."""
-        if self.window is not None:
-            # Window already exists, just bring it to front
-            self.window.lift()
-            self.window.focus_force()
+        """Show the settings interface using native macOS dialogs."""
+        try:
+            self._show_main_settings_menu()
+        except Exception as e:
+            print(f"Error showing settings: {e}")
+            self._show_error_dialog(f"Error showing settings: {e}")
+    
+    def _show_main_settings_menu(self):
+        """Show the main settings menu."""
+        current = self.settings.get_all()
+        
+        # Create main menu
+        menu_text = f"""Current Settings:
+• Interval: {current['interval_hours']} hours
+• Working Hours: {current['start_time']} - {current['end_time']}
+• Weekdays Only: {'Yes' if current['weekdays_only'] else 'No'}
+• Logging: {'Enabled' if current['create_log'] else 'Disabled'}
+
+What would you like to configure?"""
+        
+        buttons = [
+            "Timing & Schedule",
+            "Logging Settings", 
+            "Export Data",
+            "View Statistics",
+            "Reset to Defaults",
+            "Cancel"
+        ]
+        
+        choice = self._show_choice_dialog("Settings", menu_text, buttons)
+        
+        if choice == "Timing & Schedule":
+            self._show_timing_settings()
+        elif choice == "Logging Settings":
+            self._show_logging_settings()
+        elif choice == "Export Data":
+            self._show_export_menu()
+        elif choice == "View Statistics":
+            self._show_statistics()
+        elif choice == "Reset to Defaults":
+            self._reset_to_defaults()
+        # Cancel does nothing
+    
+    def _show_timing_settings(self):
+        """Show timing and schedule settings."""
+        current = self.settings.get_all()
+        
+        # Interval setting
+        interval_text = f"Current interval: {current['interval_hours']} hours\\n\\nEnter new interval (minimum 0.1 hours = 6 minutes):"
+        interval_result = self._show_input_dialog("Prompt Interval", interval_text, str(current['interval_hours']))
+        
+        if interval_result is None:
+            return  # User cancelled
+        
+        try:
+            interval = float(interval_result)
+            if interval < 0.1:
+                self._show_error_dialog("Interval must be at least 0.1 hours (6 minutes)")
+                return
+        except ValueError:
+            self._show_error_dialog("Invalid interval. Please enter a number.")
             return
         
-        self.window = tk.Toplevel()
-        self.window.title("Periodic Prompter Settings")
-        self.window.geometry("500x600")
-        self.window.resizable(True, True)
+        # Working hours
+        start_time = self._show_time_picker("Start Time", f"Current start time: {current['start_time']}")
+        if start_time is None:
+            return
         
-        # Make window modal and keep on top
-        self.window.transient()
-        self.window.grab_set()
-        self.window.lift()
-        self.window.focus_force()
-        
-        self._create_widgets()
-        self._load_current_settings()
-        
-        # Handle window close
-        self.window.protocol("WM_DELETE_WINDOW", self._on_close)
-        
-        # Center the window
-        self.window.update_idletasks()
-        x = (self.window.winfo_screenwidth() // 2) - (self.window.winfo_width() // 2)
-        y = (self.window.winfo_screenheight() // 2) - (self.window.winfo_height() // 2)
-        self.window.geometry(f"+{x}+{y}")
-    
-    def _create_widgets(self):
-        """Create all GUI widgets."""
-        # Create notebook for tabs
-        notebook = ttk.Notebook(self.window)
-        notebook.pack(fill='both', expand=True, padx=10, pady=5)
-        
-        # Create tabs
-        timing_frame = ttk.Frame(notebook)
-        logging_frame = ttk.Frame(notebook)
-        
-        notebook.add(timing_frame, text="Timing & Schedule")
-        notebook.add(logging_frame, text="Logging")
-        
-        self._create_timing_tab(timing_frame)
-        self._create_logging_tab(logging_frame)
-        
-        # Create button frame
-        button_frame = ttk.Frame(self.window)
-        button_frame.pack(fill='x', padx=10, pady=5)
-        
-        # Buttons
-        ttk.Button(button_frame, text="Save", command=self._save_settings).pack(side='right', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self._on_close).pack(side='right', padx=5)
-        ttk.Button(button_frame, text="Reset to Defaults", command=self._reset_defaults).pack(side='left', padx=5)
-    
-    def _create_timing_tab(self, parent):
-        """Create timing and schedule settings tab."""
-        # Interval settings
-        interval_frame = ttk.LabelFrame(parent, text="Prompt Interval", padding=10)
-        interval_frame.pack(fill='x', padx=5, pady=5)
-        
-        ttk.Label(interval_frame, text="Prompt every:").grid(row=0, column=0, sticky='w', pady=2)
-        
-        self.vars['interval_hours'] = tk.DoubleVar()
-        interval_spin = ttk.Spinbox(
-            interval_frame, 
-            from_=0.1, 
-            to=24.0, 
-            increment=0.1,
-            textvariable=self.vars['interval_hours'],
-            width=10
-        )
-        interval_spin.grid(row=0, column=1, padx=5, pady=2)
-        ttk.Label(interval_frame, text="hours").grid(row=0, column=2, sticky='w', pady=2)
-        
-        ttk.Label(interval_frame, text="(Minimum: 0.1 hours = 6 minutes)", 
-                 font=('Arial', 8)).grid(row=1, column=0, columnspan=3, sticky='w', pady=2)
-        
-        # Working hours settings
-        hours_frame = ttk.LabelFrame(parent, text="Working Hours", padding=10)
-        hours_frame.pack(fill='x', padx=5, pady=5)
-        
-        ttk.Label(hours_frame, text="Start time:").grid(row=0, column=0, sticky='w', pady=2)
-        self.vars['start_time'] = tk.StringVar()
-        start_combo = ttk.Combobox(
-            hours_frame, 
-            textvariable=self.vars['start_time'],
-            values=[f"{h:02d}:00" for h in range(24)],
-            width=8
-        )
-        start_combo.grid(row=0, column=1, padx=5, pady=2)
-        
-        ttk.Label(hours_frame, text="End time:").grid(row=0, column=2, sticky='w', padx=(20,0), pady=2)
-        self.vars['end_time'] = tk.StringVar()
-        end_combo = ttk.Combobox(
-            hours_frame, 
-            textvariable=self.vars['end_time'],
-            values=[f"{h:02d}:00" for h in range(24)],
-            width=8
-        )
-        end_combo.grid(row=0, column=3, padx=5, pady=2)
+        end_time = self._show_time_picker("End Time", f"Current end time: {current['end_time']}")
+        if end_time is None:
+            return
         
         # Weekdays only
-        self.vars['weekdays_only'] = tk.BooleanVar()
-        ttk.Checkbutton(
-            hours_frame, 
-            text="Weekdays only (Monday-Friday)",
-            variable=self.vars['weekdays_only']
-        ).grid(row=1, column=0, columnspan=4, sticky='w', pady=5)
-        
-        # Prompt options
-        options_frame = ttk.LabelFrame(parent, text="Prompt Options", padding=10)
-        options_frame.pack(fill='x', padx=5, pady=5)
-        
-        self.vars['show_next_hour_prompt'] = tk.BooleanVar()
-        ttk.Checkbutton(
-            options_frame,
-            text="Ask what you plan to do in the next hour",
-            variable=self.vars['show_next_hour_prompt']
-        ).pack(anchor='w', pady=2)
-    
-    def _create_logging_tab(self, parent):
-        """Create logging settings tab."""
-        # Enable logging
-        logging_frame = ttk.LabelFrame(parent, text="Log Settings", padding=10)
-        logging_frame.pack(fill='x', padx=5, pady=5)
-        
-        self.vars['create_log'] = tk.BooleanVar()
-        log_checkbox = ttk.Checkbutton(
-            logging_frame,
-            text="Create log file",
-            variable=self.vars['create_log'],
-            command=self._toggle_log_options
+        weekdays_choice = self._show_choice_dialog(
+            "Working Days", 
+            f"Current: {'Weekdays only' if current['weekdays_only'] else 'All days'}\\n\\nWhen should prompts be shown?",
+            ["Weekdays only (Mon-Fri)", "All days", "Cancel"]
         )
-        log_checkbox.pack(anchor='w', pady=2)
         
-        # Log file path
-        self.log_frame = ttk.Frame(logging_frame)
-        self.log_frame.pack(fill='x', pady=5)
+        if weekdays_choice == "Cancel":
+            return
         
-        ttk.Label(self.log_frame, text="Log file path:").pack(anchor='w')
+        weekdays_only = weekdays_choice == "Weekdays only (Mon-Fri)"
         
-        path_frame = ttk.Frame(self.log_frame)
-        path_frame.pack(fill='x', pady=2)
+        # Save settings
+        updates = {
+            'interval_hours': interval,
+            'start_time': start_time,
+            'end_time': end_time,
+            'weekdays_only': weekdays_only
+        }
         
-        self.vars['log_file_path'] = tk.StringVar()
-        path_entry = ttk.Entry(path_frame, textvariable=self.vars['log_file_path'])
-        path_entry.pack(side='left', fill='x', expand=True, padx=(0, 5))
+        self.settings.update_multiple(updates)
         
-        ttk.Button(path_frame, text="Browse...", command=self._browse_log_file).pack(side='right')
+        # Restart scheduler if it exists
+        if self.scheduler:
+            self.scheduler.restart()
         
-        # Log format options
-        format_frame = ttk.LabelFrame(parent, text="Export Options", padding=10)
-        format_frame.pack(fill='x', padx=5, pady=5)
-        
-        ttk.Button(format_frame, text="Export Plans to Text", 
-                  command=self._export_text).pack(side='left', padx=5, pady=2)
-        ttk.Button(format_frame, text="Export Plans to CSV", 
-                  command=self._export_csv).pack(side='left', padx=5, pady=2)
-        
-        # Statistics
-        stats_frame = ttk.LabelFrame(parent, text="Statistics", padding=10)
-        stats_frame.pack(fill='x', padx=5, pady=5)
-        
-        self.stats_label = ttk.Label(stats_frame, text="Loading statistics...")
-        self.stats_label.pack(anchor='w')
-        
-        self._update_statistics()
+        self._show_info_dialog("Settings Saved", "Timing settings have been updated successfully!")
     
-    def _toggle_log_options(self):
-        """Enable/disable log options based on create_log checkbox."""
-        if self.vars['create_log'].get():
-            for widget in self.log_frame.winfo_children():
-                self._enable_widget(widget)
-        else:
-            for widget in self.log_frame.winfo_children():
-                self._disable_widget(widget)
-    
-    def _enable_widget(self, widget):
-        """Enable a widget and its children."""
-        try:
-            widget.configure(state='normal')
-        except:
-            pass
-        for child in widget.winfo_children():
-            self._enable_widget(child)
-    
-    def _disable_widget(self, widget):
-        """Disable a widget and its children."""
-        try:
-            widget.configure(state='disabled')
-        except:
-            pass
-        for child in widget.winfo_children():
-            self._disable_widget(child)
-    
-    def _browse_log_file(self):
-        """Browse for log file location."""
-        filename = filedialog.asksaveasfilename(
-            title="Choose log file location",
-            defaultextension=".txt",
-            filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
-            initialfile="periodic_prompter_log.txt"
+    def _show_logging_settings(self):
+        """Show logging settings."""
+        current = self.settings.get_all()
+        
+        # Enable/disable logging
+        logging_choice = self._show_choice_dialog(
+            "Logging", 
+            f"Current: {'Enabled' if current['create_log'] else 'Disabled'}\\n\\nDo you want to enable logging?",
+            ["Enable logging", "Disable logging", "Cancel"]
         )
+        
+        if logging_choice == "Cancel":
+            return
+        
+        create_log = logging_choice == "Enable logging"
+        
+        log_path = current['log_file_path']
+        
+        if create_log:
+            # Get log file path
+            new_path = self._show_file_save_dialog("Choose log file location", "periodic_prompter_log.txt")
+            if new_path:
+                log_path = new_path
+        
+        # Save settings
+        updates = {
+            'create_log': create_log,
+            'log_file_path': log_path
+        }
+        
+        self.settings.update_multiple(updates)
+        
+        # Update notification system log writer
+        if self.notification_system:
+            if create_log:
+                # Use absolute imports for packaging compatibility
+                try:
+                    from periodic_prompter.storage import LogWriter
+                except ImportError:
+                    from .storage import LogWriter
+                self.notification_system.log_writer = LogWriter(log_path)
+            else:
+                self.notification_system.log_writer = None
+        
+        self._show_info_dialog("Settings Saved", "Logging settings have been updated successfully!")
+    
+    def _show_export_menu(self):
+        """Show export options."""
+        if not self.notification_system or not hasattr(self.notification_system, 'storage'):
+            self._show_error_dialog("Export not available - no data storage found")
+            return
+        
+        plans = self.notification_system.storage.get_plans_history(1000)
+        if not plans:
+            self._show_info_dialog("No Data", "No plans found to export.")
+            return
+        
+        export_choice = self._show_choice_dialog(
+            "Export Data",
+            f"Found {len(plans)} plans to export.\\n\\nChoose export format:",
+            ["Export to Text", "Export to CSV", "Cancel"]
+        )
+        
+        if export_choice == "Cancel":
+            return
+        
+        extension = ".txt" if export_choice == "Export to Text" else ".csv"
+        default_name = f"periodic_prompter_export{extension}"
+        
+        filename = self._show_file_save_dialog("Export plans", default_name)
         if filename:
-            self.vars['log_file_path'].set(filename)
-    
-    def _export_text(self):
-        """Export plans to text format."""
-        if self.notification_system and hasattr(self.notification_system, 'storage'):
-            plans = self.notification_system.storage.get_plans_history(1000)
-            if plans:
-                filename = filedialog.asksaveasfilename(
-                    title="Export plans to text",
-                    defaultextension=".txt",
-                    filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
-                )
-                if filename:
-                    log_writer = self.notification_system.log_writer
-                    if log_writer:
-                        log_writer.log_file_path = Path(filename)
-                        log_writer.export_all_plans(plans, 'txt')
-                        messagebox.showinfo("Export Complete", f"Plans exported to {filename}")
+            log_writer = self.notification_system.log_writer
+            if log_writer:
+                log_writer.log_file_path = Path(filename)
+                format_type = 'txt' if export_choice == "Export to Text" else 'csv'
+                log_writer.export_all_plans(plans, format_type)
+                self._show_info_dialog("Export Complete", f"Plans exported to {filename}")
             else:
-                messagebox.showinfo("No Data", "No plans found to export.")
+                self._show_error_dialog("Export failed - no log writer available")
     
-    def _export_csv(self):
-        """Export plans to CSV format."""
-        if self.notification_system and hasattr(self.notification_system, 'storage'):
-            plans = self.notification_system.storage.get_plans_history(1000)
-            if plans:
-                filename = filedialog.asksaveasfilename(
-                    title="Export plans to CSV",
-                    defaultextension=".csv",
-                    filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
-                )
-                if filename:
-                    log_writer = self.notification_system.log_writer
-                    if log_writer:
-                        log_writer.log_file_path = Path(filename)
-                        log_writer.export_all_plans(plans, 'csv')
-                        messagebox.showinfo("Export Complete", f"Plans exported to {filename}")
-            else:
-                messagebox.showinfo("No Data", "No plans found to export.")
-    
-    def _update_statistics(self):
-        """Update statistics display."""
-        if self.notification_system and hasattr(self.notification_system, 'storage'):
-            stats = self.notification_system.storage.get_stats()
-            stats_text = f"""Total plans: {stats['total_plans']}
+    def _show_statistics(self):
+        """Show statistics."""
+        if not self.notification_system or not hasattr(self.notification_system, 'storage'):
+            self._show_error_dialog("Statistics not available - no data storage found")
+            return
+        
+        stats = self.notification_system.storage.get_stats()
+        stats_text = f"""Statistics:
+
+Total plans: {stats['total_plans']}
 Completed plans: {stats['completed_plans']}
 Completion rate: {stats['completion_rate']:.1f}%
 Plans this week: {stats['plans_this_week']}
 Plans today: {stats['plans_today']}"""
-            self.stats_label.config(text=stats_text)
-    
-    def _load_current_settings(self):
-        """Load current settings into the GUI."""
-        current = self.settings.get_all()
         
-        self.vars['interval_hours'].set(current['interval_hours'])
-        self.vars['start_time'].set(current['start_time'])
-        self.vars['end_time'].set(current['end_time'])
-        self.vars['weekdays_only'].set(current['weekdays_only'])
-        self.vars['show_next_hour_prompt'].set(current['show_next_hour_prompt'])
-        self.vars['create_log'].set(current['create_log'])
-        self.vars['log_file_path'].set(current['log_file_path'])
-        
-        # Update log options state
-        self._toggle_log_options()
+        self._show_info_dialog("Statistics", stats_text)
     
-    def _save_settings(self):
-        """Save settings and close window."""
+    def _reset_to_defaults(self):
+        """Reset settings to defaults."""
+        choice = self._show_choice_dialog(
+            "Reset Settings",
+            "Are you sure you want to reset all settings to defaults?",
+            ["Reset to Defaults", "Cancel"]
+        )
+        
+        if choice == "Reset to Defaults":
+            self.settings.reset_to_defaults()
+            self._show_info_dialog("Settings Reset", "Settings have been reset to defaults.")
+    
+    def _show_time_picker(self, title, message):
+        """Show time picker dialog."""
+        hours = []
+        for h in range(24):
+            hours.append(f"{h:02d}:00")
+        
+        choice = self._show_choice_dialog(title, message, hours + ["Cancel"])
+        
+        return choice if choice != "Cancel" else None
+    
+    def _show_choice_dialog(self, title, message, buttons):
+        """Show a choice dialog with multiple buttons."""
         try:
-            # Validate interval
-            interval = self.vars['interval_hours'].get()
-            if interval < 0.1:
-                messagebox.showerror("Invalid Input", "Interval must be at least 0.1 hours (6 minutes)")
-                return
+            # Create buttons string for AppleScript
+            buttons_str = ', '.join(f'"{btn}"' for btn in buttons)
+            default_button = buttons[0]
             
-            # Prepare updates
-            updates = {
-                'interval_hours': interval,
-                'start_time': self.vars['start_time'].get(),
-                'end_time': self.vars['end_time'].get(),
-                'weekdays_only': self.vars['weekdays_only'].get(),
-                'show_next_hour_prompt': self.vars['show_next_hour_prompt'].get(),
-                'create_log': self.vars['create_log'].get(),
-                'log_file_path': self.vars['log_file_path'].get()
-            }
+            script = f'''
+            set buttonChoice to button returned of (display dialog "{message}" with title "{title}" buttons {{{buttons_str}}} default button "{default_button}")
+            return buttonChoice
+            '''
             
-            # Save settings
-            self.settings.update_multiple(updates)
+            result = subprocess.run(['osascript', '-e', script], 
+                                  capture_output=True, text=True, check=True)
             
-            # Restart scheduler if it exists
-            if self.scheduler:
-                self.scheduler.restart()
+            return result.stdout.strip()
             
-            # Update notification system log writer
-            if self.notification_system:
-                if updates['create_log']:
-                    # Use absolute imports for packaging compatibility
-                    try:
-                        from periodic_prompter.storage import LogWriter
-                    except ImportError:
-                        from .storage import LogWriter
-                    self.notification_system.log_writer = LogWriter(updates['log_file_path'])
-                else:
-                    self.notification_system.log_writer = None
+        except subprocess.CalledProcessError:
+            return None  # User cancelled
+        except Exception as e:
+            print(f"Error showing choice dialog: {e}")
+            return None
+    
+    def _show_input_dialog(self, title, message, default_value=""):
+        """Show an input dialog."""
+        try:
+            script = f'''
+            set inputText to text returned of (display dialog "{message}" with title "{title}" default answer "{default_value}")
+            return inputText
+            '''
             
-            messagebox.showinfo("Settings Saved", "Settings have been saved successfully!")
-            self._on_close()
+            result = subprocess.run(['osascript', '-e', script], 
+                                  capture_output=True, text=True, check=True)
+            
+            return result.stdout.strip()
+            
+        except subprocess.CalledProcessError:
+            return None  # User cancelled
+        except Exception as e:
+            print(f"Error showing input dialog: {e}")
+            return None
+    
+    def _show_file_save_dialog(self, title, default_name):
+        """Show file save dialog."""
+        try:
+            script = f'''
+            set saveFile to choose file name with prompt "{title}" default name "{default_name}"
+            return POSIX path of saveFile
+            '''
+            
+            result = subprocess.run(['osascript', '-e', script], 
+                                  capture_output=True, text=True, check=True)
+            
+            return result.stdout.strip()
+            
+        except subprocess.CalledProcessError:
+            return None  # User cancelled
+        except Exception as e:
+            print(f"Error showing file save dialog: {e}")
+            return None
+    
+    def _show_info_dialog(self, title, message):
+        """Show an info dialog."""
+        try:
+            script = f'''
+            display dialog "{message}" with title "{title}" buttons {{"OK"}} default button "OK"
+            '''
+            
+            subprocess.run(['osascript', '-e', script], 
+                          capture_output=True, text=True, check=True)
             
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save settings: {str(e)}")
+            print(f"Error showing info dialog: {e}")
     
-    def _reset_defaults(self):
-        """Reset settings to defaults."""
-        if messagebox.askyesno("Reset Settings", "Are you sure you want to reset all settings to defaults?"):
-            self.settings.reset_to_defaults()
-            self._load_current_settings()
-            messagebox.showinfo("Settings Reset", "Settings have been reset to defaults.")
-    
-    def _on_close(self):
-        """Handle window close event."""
-        if self.window:
-            self.window.grab_release()
-            root = self.window.master
-            self.window.destroy()
-            self.window = None
-            # Quit the Tkinter mainloop to clean up properly
-            try:
-                root.quit()
-            except:
-                pass
+    def _show_error_dialog(self, message):
+        """Show an error dialog."""
+        try:
+            script = f'''
+            display dialog "{message}" with title "Error" buttons {{"OK"}} default button "OK" with icon stop
+            '''
+            
+            subprocess.run(['osascript', '-e', script], 
+                          capture_output=True, text=True, check=True)
+            
+        except Exception as e:
+            print(f"Error showing error dialog: {e}")

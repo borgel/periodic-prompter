@@ -31,11 +31,15 @@ OPTIONS = {
         'periodic_prompter.settings', 
         'periodic_prompter.storage',
         'periodic_prompter.scheduler',
-        'periodic_prompter.settings_gui'
+        'periodic_prompter.settings_gui',
+        'tkinter',
+        'tkinter.ttk',
+        'tkinter.messagebox',
+        'tkinter.filedialog'
     ],
     'excludes': [
         'matplotlib', 'numpy', 'scipy', 'Carbon', 'wx', 'pygame',
-        'tkinter.test', 'test', 'unittest', 'lib2to3',
+        'test', 'unittest', 'lib2to3',
         'pydoc', 'doctest', 'django', 'flask', 'tornado'
     ],
     'frameworks': [],

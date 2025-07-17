@@ -30,23 +30,14 @@ class PeriodicPrompterApp(rumps.App):
         self.settings_window = None
         
         # Set up menu
-        self.update_menu()
+        self.setup_menu()
+        self.update_menu_title()
         
         # Start scheduler
         self.scheduler.start()
     
-    def update_menu(self):
-        """Update the menu with current plan text."""
-        current_plan = self.notification_system.current_plan
-        if current_plan:
-            # Truncate long plans for menu display and update title
-            display_text = current_plan[:50] + "..." if len(current_plan) > 50 else current_plan
-            # Update the app title to show current plan
-            self.title = f"⏰ {display_text}"
-        else:
-            self.title = "⏰"
-        
-        # Create static menu
+    def setup_menu(self):
+        """Set up the static menu structure (only called once)."""
         self.menu = [
             "Current Plan",
             "Prompt Now", 
@@ -57,9 +48,20 @@ class PeriodicPrompterApp(rumps.App):
             "Settings",
         ]
     
+    def update_menu_title(self):
+        """Update only the menu bar title with current plan text."""
+        current_plan = self.notification_system.current_plan
+        if current_plan:
+            # Truncate long plans for menu display and update title
+            display_text = current_plan[:50] + "..." if len(current_plan) > 50 else current_plan
+            # Update the app title to show current plan
+            self.title = f"⏰ {display_text}"
+        else:
+            self.title = "⏰"
+    
     def update_plan_in_menu(self):
         """Update the menu with current plan text."""
-        self.update_menu()
+        self.update_menu_title()
     
     @rumps.clicked("Current Plan") 
     def show_current_plan(self, _):

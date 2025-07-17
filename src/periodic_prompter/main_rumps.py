@@ -98,12 +98,20 @@ class PeriodicPrompterApp(rumps.App):
     def open_settings(self, _):
         """Open settings interface."""
         def show_settings():
+            # Create a hidden Tkinter root window for the settings dialog
+            import tkinter as tk
+            root = tk.Tk()
+            root.withdraw()  # Hide the root window
+            
             self.settings_window = SettingsWindow(
                 self.settings, 
                 self.scheduler, 
                 self.notification_system
             )
             self.settings_window.show()
+            
+            # Start Tkinter mainloop to handle the dialog
+            root.mainloop()
         
         # Run in separate thread to avoid blocking UI
         threading.Thread(target=show_settings, daemon=True).start()

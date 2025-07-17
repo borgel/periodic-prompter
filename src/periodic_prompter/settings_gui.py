@@ -343,5 +343,11 @@ Plans today: {stats['plans_today']}"""
         """Handle window close event."""
         if self.window:
             self.window.grab_release()
+            root = self.window.master
             self.window.destroy()
             self.window = None
+            # Quit the Tkinter mainloop to clean up properly
+            try:
+                root.quit()
+            except:
+                pass

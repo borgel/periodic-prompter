@@ -23,7 +23,7 @@ OPTIONS = {
     'site_packages': False,
     'strip': True,
     'optimize': 2,
-    'packages': ['PIL', 'rumps', 'plyer', 'schedule', 'tkinter'],
+    'packages': ['rumps', 'plyer', 'schedule', 'tkinter'],
     'includes': [
         'periodic_prompter',
         'periodic_prompter.main_rumps',

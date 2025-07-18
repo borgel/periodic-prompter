@@ -19,7 +19,8 @@
       "Bash(open:*)",
       "Bash(log show:*)",
       "Bash(killall:*)",
-      "Bash(true)"
+      "Bash(true)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }

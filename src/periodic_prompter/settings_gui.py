@@ -16,16 +16,20 @@ class SettingsWindow:
     def show(self):
         """Show the settings interface using native macOS dialogs."""
         try:
+            print("Settings.show() called")
             self._show_main_settings_menu()
         except Exception as e:
             print(f"Error showing settings: {e}")
+            import traceback
+            traceback.print_exc()
             self._show_error_dialog(f"Error showing settings: {e}")
     
     def _show_main_settings_menu(self):
         """Show the main settings menu."""
+        print("_show_main_settings_menu() called")
         current = self.settings.get_all()
         
-        # Create main menu
+        # Create main menu with max 3 buttons
         menu_text = f"""Current Settings:
 • Interval: {current['interval_hours']} hours
 • Working Hours: {current['start_time']} - {current['end_time']}
@@ -35,27 +39,54 @@ class SettingsWindow:
 What would you like to configure?"""
         
         buttons = [
-            "Timing & Schedule",
-            "Logging Settings", 
-            "Export Data",
-            "View Statistics",
-            "Reset to Defaults",
+            "Settings",
+            "Data & Stats", 
             "Cancel"
         ]
         
-        choice = self._show_choice_dialog("Settings", menu_text, buttons)
+        print(f"About to show choice dialog with menu_text: {menu_text}")
+        choice = self._show_choice_dialog("Periodic Prompter", menu_text, buttons)
+        print(f"Choice dialog returned: {choice}")
+        
+        if choice == "Settings":
+            self._show_settings_submenu()
+        elif choice == "Data & Stats":
+            self._show_data_submenu()
+        # Cancel does nothing
+    
+    def _show_settings_submenu(self):
+        """Show the settings submenu."""
+        buttons = [
+            "Timing & Schedule",
+            "Logging Settings",
+            "Cancel"
+        ]
+        
+        choice = self._show_choice_dialog("Settings", "Choose a settings category:", buttons)
         
         if choice == "Timing & Schedule":
             self._show_timing_settings()
         elif choice == "Logging Settings":
             self._show_logging_settings()
-        elif choice == "Export Data":
+        # Cancel goes back to main menu
+    
+    def _show_data_submenu(self):
+        """Show the data & statistics submenu."""
+        buttons = [
+            "Export Data",
+            "View Statistics",
+            "Reset to Defaults"
+        ]
+        
+        choice = self._show_choice_dialog("Data & Statistics", "Choose an option:", buttons)
+        
+        if choice == "Export Data":
             self._show_export_menu()
         elif choice == "View Statistics":
             self._show_statistics()
         elif choice == "Reset to Defaults":
             self._reset_to_defaults()
-        # Cancel does nothing
+        # Cancel goes back to main menu
     
     def _show_timing_settings(self):
         """Show timing and schedule settings."""
@@ -224,14 +255,29 @@ Plans today: {stats['plans_today']}"""
             self._show_info_dialog("Settings Reset", "Settings have been reset to defaults.")
     
     def _show_time_picker(self, title, message):
-        """Show time picker dialog."""
-        hours = []
-        for h in range(24):
-            hours.append(f"{h:02d}:00")
+        """Show time picker dialog using input dialog."""
+        input_text = f"{message}\n\nEnter time in HH:MM format (24-hour):"
         
-        choice = self._show_choice_dialog(title, message, hours + ["Cancel"])
-        
-        return choice if choice != "Cancel" else None
+        while True:
+            time_input = self._show_input_dialog(title, input_text, "09:00")
+            if time_input is None:
+                return None  # User cancelled
+            
+            # Validate time format
+            try:
+                parts = time_input.split(':')
+                if len(parts) == 2:
+                    hour = int(parts[0])
+                    minute = int(parts[1])
+                    if 0 <= hour <= 23 and 0 <= minute <= 59:
+                        return f"{hour:02d}:{minute:02d}"
+                
+                # Invalid format, show error and try again
+                self._show_error_dialog(f"Invalid time format: {time_input}. Please use HH:MM format (e.g., 09:00).")
+                input_text = f"{message}\n\nEnter time in HH:MM format (24-hour):\n(Previous invalid input: {time_input})"
+            except ValueError:
+                self._show_error_dialog(f"Invalid time format: {time_input}. Please use HH:MM format (e.g., 09:00).")
+                input_text = f"{message}\n\nEnter time in HH:MM format (24-hour):\n(Previous invalid input: {time_input})"
     
     def _show_choice_dialog(self, title, message, buttons):
         """Show a choice dialog with multiple buttons."""
@@ -245,12 +291,15 @@ Plans today: {stats['plans_today']}"""
             return buttonChoice
             '''
             
+            print(f"Running AppleScript: {script}")
             result = subprocess.run(['osascript', '-e', script], 
                                   capture_output=True, text=True, check=True)
             
+            print(f"AppleScript result: stdout='{result.stdout}', stderr='{result.stderr}'")
             return result.stdout.strip()
             
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as e:
+            print(f"AppleScript CalledProcessError: {e}, stdout='{e.stdout}', stderr='{e.stderr}'")
             return None  # User cancelled
         except Exception as e:
             print(f"Error showing choice dialog: {e}")

@@ -99,13 +99,22 @@ class PeriodicPrompterApp(rumps.App):
     @rumps.clicked("Settings")
     def open_settings(self, _):
         """Open settings interface."""
+        print("Settings button clicked!")  # Debug output
         def show_settings():
-            self.settings_window = SettingsWindow(
-                self.settings, 
-                self.scheduler, 
-                self.notification_system
-            )
-            self.settings_window.show()
+            try:
+                print("Creating SettingsWindow...")  # Debug output
+                self.settings_window = SettingsWindow(
+                    self.settings, 
+                    self.scheduler, 
+                    self.notification_system
+                )
+                print("Calling settings_window.show()...")  # Debug output
+                self.settings_window.show()
+                print("settings_window.show() completed")  # Debug output
+            except Exception as e:
+                print(f"Error in show_settings: {e}")
+                import traceback
+                traceback.print_exc()
         
         # Run in separate thread to avoid blocking UI
         threading.Thread(target=show_settings, daemon=True).start()
